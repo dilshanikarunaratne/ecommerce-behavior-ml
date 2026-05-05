@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>E-commerce Behavior Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>E-commerce Visitor Behavior Dashboard</h1>
+
+        <section class="cards">
+            <div class="card">
+                <h3>Total Visitors</h3>
+                <p>{{ total_visitors }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Actual Buyers</h3>
+                <p>{{ buyers }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Conversion Rate</h3>
+                <p>{{ conversion_rate }}</p>
+            </div>
+
+            <div class="card">
+                <h3>Avg Purchase Probability</h3>
+                <p>{{ avg_purchase_probability }}</p>
+            </div>
+        </section>
+
+        <section>
+            <h2>Dataset Preview</h2>
+            <div class="table-wrapper">
+                {{ preview | safe }}
+            </div>
+        </section>
+
+        <section>
+            <h2>Visitor Segments</h2>
+            {{ charts.segments | safe }}
+            {{ charts.probability | safe }}
+        </section>
+
+        <section>
+            <h2>Revenue Distribution</h2>
+            {{ charts.revenue | safe }}
+        </section>
+
+        <section>
+            <h2>Behavior Metrics by Segment</h2>
+            <div class="table-wrapper">
+                {{ metrics | safe }}
+            </div>
+
+            {{ charts.page_values | safe }}
+            {{ charts.bounce | safe }}
+            {{ charts.exit | safe }}
+        </section>
+    </div>
+</body>
+</html>
