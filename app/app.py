@@ -4,13 +4,14 @@ import plotly.express as px
 import plotly.io as pio
 from flask import Flask, render_template
 
-
+# create Flask app
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "data_with_predictions.csv")
 
-
+# defines webpage route
+# "/" means homepage, for example: http://localhost:5000/
 @app.route("/")
 def dashboard():
     df = pd.read_csv(DATA_PATH)
@@ -77,7 +78,9 @@ def dashboard():
         y="ExitRates",
         title="Average Exit Rate by Segment"
     )
-
+    
+    # Convert Plotly figures to HTML
+    # Creates a dictionary storing chart HTML
     charts = {
         "segments": pio.to_html(fig_segments, full_html=False),
         "probability": pio.to_html(fig_prob, full_html=False),

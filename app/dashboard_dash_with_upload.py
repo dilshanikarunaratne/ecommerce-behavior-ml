@@ -11,6 +11,7 @@ from dash import Dash, html, dcc, dash_table, Input, Output, State
 import sys
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(BASE_DIR, "src")
+# Adds src/ folder to Python import to allow make_predictions function to work
 sys.path.append(SRC_DIR)
 
 from predict import make_predictions
@@ -18,27 +19,28 @@ from predict import make_predictions
 
 DEFAULT_DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "data_with_predictions.csv")
 
-
+# creates Dash app
 app = Dash(__name__)
 app.title = "E-commerce Behavior Dashboard"
 
-
+# to load fallback dataset
 def load_default_data():
     if os.path.exists(DEFAULT_DATA_PATH):
         return pd.read_csv(DEFAULT_DATA_PATH)
     return pd.DataFrame()
 
-
+# processes uploaded CSV files
 def parse_uploaded_file(contents, filename):
-    content_type, content_string = contents.split(",")
-    decoded = base64.b64decode(content_string)
-
+    content_type, content_string = contents.split(",") # seperates metadata, actual encoded file content
+    decoded = base64.b64decode(content_string) # converts Base64 back into raw CSV text
+    # checks uploaded file type
     if filename.endswith(".csv"):
-        return pd.read_csv(io.StringIO(decoded.decode("utf-8")))
+        return pd.read_csv(io.StringIO(decoded.decode("utf-8"))) # decodes to text, wrap text as file-like object, pandas reads it
 
-    raise ValueError("Please upload a CSV file.")
+    raise ValueError("Please upload a CSV file.") # throws an error for invalid file types
 
 
+# dynamically builds dashboard content
 def create_dashboard_layout(df):
     if df.empty:
         return html.Div("No data available.")
@@ -228,7 +230,7 @@ app.layout = html.Div(
                     "textAlign": "center",
                     "marginBottom": "20px"
                 },
-                multiple=False
+                multiple=False # single file only
             ),
 
             html.Button(
@@ -260,30 +262,35 @@ app.layout = html.Div(
     Input("default-data-button", "n_clicks"),
     State("upload-data", "filename")
 )
+
+# runs whenever input changes
 def update_dashboard(contents, n_clicks, filename):
     ctx = __import__("dash").callback_context
-
+    # runs on initial page load
     if not ctx.triggered:
         df = load_default_data()
         return create_dashboard_layout(df), "Showing default processed dataset."
 
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0]
-
+    
+    # loads default dataset
     if triggered_id == "default-data-button":
         df = load_default_data()
         return create_dashboard_layout(df), "Showing default processed dataset."
-
+    
+    # runs when CSV uploaded
     if triggered_id == "upload-data" and contents is not None:
         try:
-            uploaded_df = parse_uploaded_file(contents, filename)
+            uploaded_df = parse_uploaded_file(contents, filename) # reads uploaded CSV
 
-            predicted_df = make_predictions(uploaded_df)
+            predicted_df = make_predictions(uploaded_df) # runs ML prediction pipeline
 
             return (
                 create_dashboard_layout(predicted_df),
                 f"Predictions generated successfully for: {filename}"
             )
 
+        # catches runtime errors
         except Exception as e:
             return html.Div(), f"Error processing uploaded file: {str(e)}"
 

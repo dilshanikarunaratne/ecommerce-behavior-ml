@@ -39,8 +39,9 @@ st.divider()
 st.subheader("Visitor Segments")
 
 segment_counts = df["behavior_segment"].value_counts().reset_index()
-segment_counts.columns = ["behavior_segment", "count"]
+segment_counts.columns = ["behavior_segment", "count"] # Rename columns 
 
+# Creates a bar chart for count of segments
 fig_segments = px.bar(
     segment_counts,
     x="behavior_segment",
@@ -50,9 +51,10 @@ fig_segments = px.bar(
 
 st.plotly_chart(fig_segments, use_container_width=True)
 
-# Average probability by segment
+# Groups users by segment and calculates average purchase probability
 avg_prob = df.groupby("behavior_segment")["purchase_probability"].mean().reset_index()
 
+# Creates a bar chart segment purchase probability
 fig_prob = px.bar(
     avg_prob,
     x="behavior_segment",
@@ -70,6 +72,7 @@ st.subheader("Revenue Distribution")
 revenue_counts = df["Revenue"].value_counts().reset_index()
 revenue_counts.columns = ["Revenue", "count"]
 
+# creates pie chart for revenue distribution
 fig_revenue = px.pie(
     revenue_counts,
     names="Revenue",
@@ -82,6 +85,7 @@ st.plotly_chart(fig_revenue, use_container_width=True)
 # Behavior analysis
 st.subheader("Behavior Metrics by Segment")
 
+# Group by metrics
 metrics = df.groupby("behavior_segment")[[
     "ProductRelated",
     "ProductRelated_Duration",
@@ -90,8 +94,10 @@ metrics = df.groupby("behavior_segment")[[
     "PageValues"
 ]].mean().reset_index()
 
+# Display table
 st.dataframe(metrics)
 
+# creates a boxplot for page value
 fig_page_values = px.box(
     df,
     x="behavior_segment",
@@ -101,6 +107,7 @@ fig_page_values = px.box(
 
 st.plotly_chart(fig_page_values, use_container_width=True)
 
+# creates a bar chart for bounce rate
 fig_bounce = px.bar(
     metrics,
     x="behavior_segment",
@@ -110,6 +117,7 @@ fig_bounce = px.bar(
 
 st.plotly_chart(fig_bounce, use_container_width=True)
 
+# creates a bar chart for exit rate
 fig_exit = px.bar(
     metrics,
     x="behavior_segment",

@@ -72,6 +72,7 @@ fig_exit = px.bar(
     title="Average Exit Rate by Segment"
 )
 
+# creates Dash web app
 app = Dash(__name__)
 
 app.layout = html.Div(

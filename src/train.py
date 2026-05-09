@@ -1,34 +1,42 @@
 import os
 import pandas as pd
-import joblib
-
+import joblib #joblib is used to save and load trained models
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from segmentation import assign_behavior_segment
+from segmentation import assign_behavior_segment #imports a custom function for segmentation
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
     confusion_matrix,
     roc_auc_score
 )
+from preprocessing import preprocess_data #imports a custom function for preprocessing the dataset
 
-from preprocessing import preprocess_data
-
-
+# -------------------------------------------------------
+# os.path.join() builds safe paths like data/raw/file.csv
+# -------------------------------------------------------
+# To get the root project folder
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+# creates the dataset path
 DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "online_shoppers_intention.csv")
+# creates a folder to store trained models
 MODELS_DIR = os.path.join(BASE_DIR, "models")
+# creates a folder to store processed data
 PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
-
+# this is where trained model is saved
 MODEL_PATH = os.path.join(MODELS_DIR, "purchase_model.pkl")
+# this is where feature names are saved
 FEATURES_PATH = os.path.join(MODELS_DIR, "feature_columns.pkl")
+# this is where final dataset with predictions are saved
 OUTPUT_DATA_PATH = os.path.join(PROCESSED_DIR, "data_with_predictions.csv")
 
 
+# -----------------------------------------------------------------------------------------------
+# Imports the custom function assign_segment and creates behavior categories based on probability
+# -----------------------------------------------------------------------------------------------
 def assign_segment(probability):
     if probability >= 0.80:
         return "High Intent"
@@ -39,28 +47,30 @@ def assign_segment(probability):
     else:
         return "Low Intent"
 
-
+# This is a resusable function to evaluate any model
 def evaluate_model(name, model, X_test, y_test):
-    y_pred = model.predict(X_test)
-    y_proba = model.predict_proba(X_test)[:, 1]
+    y_pred = model.predict(X_test) # gives the preduction label 1 / 0
+    y_proba = model.predict_proba(X_test)[:, 1] # predict_proba is a machine learning method,provides continuous values between \(0\) and \(1\)
 
-    accuracy = accuracy_score(y_test, y_pred)
-    roc_auc = roc_auc_score(y_test, y_proba)
+    accuracy = accuracy_score(y_test, y_pred) # Accuracy = correct predictions / Total predictions
+    roc_auc = roc_auc_score(y_test, y_proba) # Measures ranking quality of probabilities
 
     print(f"\n--- {name} ---")
     print("Accuracy:", accuracy)
     print("ROC-AUC:", roc_auc)
-    print("\nClassification Report:")
+    print("\nClassification Report:") # this has precision, recall and F1-score
     print(classification_report(y_test, y_pred))
-    print("\nConfusion Matrix:")
+    print("\nConfusion Matrix:") # this gives values of true positives, false positives, true negatives and false negatives
     print(confusion_matrix(y_test, y_pred))
 
     return roc_auc
 
-
+# ----------------------
+# Main Training Function 
+# ----------------------
 def train_model():
     df = pd.read_csv(DATA_PATH)
-    df = preprocess_data(df)
+    df = preprocess_data(df) # runs preprocessing pipeline
 
     X = df.drop("Revenue", axis=1)
     y = df["Revenue"]
@@ -72,10 +82,10 @@ def train_model():
         y,
         test_size=0.2,
         random_state=42,
-        stratify=y
+        stratify=y # maintaines same class distribution
     )
 
-    models = {}
+    models = {} # a distionary to store models
 
     # 1. Logistic Regression baseline
     lr_pipeline = Pipeline([
@@ -85,10 +95,10 @@ def train_model():
             class_weight="balanced",
             random_state=42
         ))
-    ])
+    ]) # Creates ML Pipeline
 
-    lr_pipeline.fit(X_train, y_train)
-    models["Logistic Regression"] = lr_pipeline
+    lr_pipeline.fit(X_train, y_train) # train the model
+    models["Logistic Regression"] = lr_pipeline # stores the model in dictionary
 
     # 2. Random Forest baseline
     rf_pipeline = Pipeline([
@@ -118,7 +128,13 @@ def train_model():
         "model__max_depth": [5, 10, 15, None],
         "model__min_samples_split": [2, 5, 10],
         "model__min_samples_leaf": [1, 2, 4]
-    }
+    } 
+    #Hyperparameter search space
+    # model__n_estimators - trees, more trees, better stability
+    # model__max_depth - tree depth, controls complexity
+    # model__min_samples_split - minimum samples needed before splitting
+    # model__min_samples_leaf - leaf size, controls overfitting
+    
 
     rf_grid = GridSearchCV(
         estimator=rf_grid_pipeline,
@@ -127,6 +143,7 @@ def train_model():
         cv=5,
         n_jobs=-1
     )
+    # cv=5, 5-fold cross validation, dataset split into 5 parts
 
     rf_grid.fit(X_train, y_train)
 
@@ -161,15 +178,18 @@ def train_model():
 
     df["purchase_prediction"] = best_model.predict(X)
     df["purchase_probability"] = best_model.predict_proba(X)[:, 1]
-
+    # creates customer behavior groups
     df["behavior_segment"] = df.apply(assign_behavior_segment, axis=1)
 
     os.makedirs(MODELS_DIR, exist_ok=True)
     os.makedirs(PROCESSED_DIR, exist_ok=True)
 
+    # save model
     joblib.dump(best_model, MODEL_PATH)
+    # save feature names
     joblib.dump(feature_columns, FEATURES_PATH)
 
+    # exports dataset with predictions
     df.to_csv(OUTPUT_DATA_PATH, index=False)
 
     print("\nModel and feature columns saved successfully.")
@@ -177,6 +197,6 @@ def train_model():
     print("Features:", FEATURES_PATH)
     print("Predicted dataset:", OUTPUT_DATA_PATH)
 
-
+# Entry Point, runs this if file executed directly
 if __name__ == "__main__":
-    train_model()
+    train_model() 

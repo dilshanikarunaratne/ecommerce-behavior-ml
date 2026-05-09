@@ -3,16 +3,16 @@ import pandas as pd
 def preprocess_data(df):
     df = df.copy()
 
-    # -------------------------
-    # 1. Handle Revenue safely
+    
+    # 1. Handle Target vaiable (Revenue) 
     # When you upload a CSV, the dataset does not neccessarily have the 'Revenue' column. Therefore, it is only considered if available
-    # -------------------------
+    
     if "Revenue" in df.columns:
         df["Revenue"] = df["Revenue"].astype(int)
 
-    # -------------------------
+    
     # 2. Handle missing values
-    # -------------------------
+    
 
     # Numerical columns, fill NA with median
     numerical_cols = [
@@ -27,7 +27,7 @@ def preprocess_data(df):
         if col in df.columns:
             df[col] = df[col].fillna(df[col].median())
 
-    # Categorical columns
+    # Categorical columns, fill NA with "Unknown"
     categorical_cols = [
         "Month", "VisitorType", "OperatingSystems",
         "Browser", "Region", "TrafficType"
@@ -37,14 +37,13 @@ def preprocess_data(df):
         if col in df.columns:
             df[col] = df[col].fillna("Unknown")
 
-    # Boolean column
+    # Boolean column, fill NA with "False"
     if "Weekend" in df.columns:
         df["Weekend"] = df["Weekend"].fillna(False)
 
-    # -------------------------
+  
     # 3. One-hot Encoding
-    # -------------------------
-
+    
     if "VisitorType" in df.columns:
         df["VisitorType"] = df["VisitorType"].map({
             "Returning_Visitor": 1,
